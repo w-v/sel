@@ -13,8 +13,11 @@ CONF_PATH='fehbg.json'
 selec=[0,0,0,0]
 dims=[]
 times=[60,20,5,1]
+ransomize=[False,False,True,True]
+cycle=[False,False,True,False]
 s=0
 d=0
+command="fehbg --bg-fill "
 events=[]
 
 def read_conf(path): 
@@ -72,13 +75,26 @@ def t(i):
     print(i)
 
 def renew(i):
-    print(str(i)+" renewed "+str(selec)+" dim:"+str(dims[i]))
-    selec[i]=(1+selec[i])%dims[i]
     if i == d-1:
         item = getSelec(array,selec)
+        os.system(command+item)
         print("item : "+str(item))
+
+    if randomize[i]:
+        selec[i] = randrange(dims[i])
     else:
-        dims[i+1]=getDim(array, getListIndex(i+1))
+        if cycle[i] and selec[i]+1 == dims[i]:
+            selec[i] = 0
+        selec[i]=(1+selec[i])%dims[i]
+
+    print(str(i)+" renewed "+str(selec)+" dim:"+str(dims[i]))
+
+    if i < d-1:
+        for i in range(i+1,d)
+            dims[i]=getDim(array, getListIndex(i))
+            selec[i] = 0
+            renew(i)
+
     events[i] = s.enter(times[i],0,renew,argument=(i,))
 
 a=sys.stdin.read()
