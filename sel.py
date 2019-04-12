@@ -59,15 +59,20 @@ def setselec(i, n):
 def renew(i, delta=1):
     if i == d-1:
         item = getSelec(array,selec)
-        logging.info("item : "+str(item))
-        os.system(command+item)
-        logging.info("command done")
+        if item:
+            logging.info("item : "+str(item))
+            os.system(command+'"'+item+'"'+" >>log")
+            logging.info("command done")
 
+    if not cycle[i] and ( selec[i]+delta >= dims[i] or selec[i]+delta < 0):
+        logging.debug("cycle renew")
+        setselec(i-1,selec[i-1]+(delta//abs(delta)))
+        setselec(i,selec[i]+delta-dims[i])
+        renew(i-1)
+        return
+    # cycle means you renew i-1
     if times[i] != 0 and delta != 0:
         setselec(i,selec[i]+delta)
-    #if cycle[i] and ( selec[i]+delta > dims[i] or selec[i]+delta < 0):
-    #    selec[i] = 0
-    # cycle means you renew i-1
 
     logging.info(str(i)+" renewed "+str(selec)+" dim:"+str(dims[i]))
 
@@ -75,7 +80,7 @@ def renew(i, delta=1):
         dims[i+1]=getDim(array, getListIndex(i+1))
         setselec(i+1,0) 
         
-        if times[i+1] != 0:
+        if times[i+1] != 0 and events[i+1] in s.queue:
             s.cancel(events[i+1])
         renew(i+1,1)
     if times[i] != 0:
@@ -92,7 +97,8 @@ def add(sel,delta):
         for i in range(d):
             if delta[i] != 0:
                 dims[i]=getDim(array, getListIndex(i))
-                s.cancel(events[i])
+                if events[i] != 0 and events[i] in s.queue:
+                    s.cancel(events[i])
                 renew(i, 0)
                 break
 
@@ -154,10 +160,10 @@ randomize=json.loads(args.randomize)
 cycle=json.loads(args.cycle)
 s=0
 #command="feh --bg-fill --no-fehbg --no-xinerama "
-command="echo "
+command="/home/martine/bin/chbg "
 events=[]
 
-
+print(d)
 if d != len(selec):
     logging.critical("dimensions of default "+str(selec)+" and json dont match "+str(d)+" != "+str(len(selec)))
 
