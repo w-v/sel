@@ -20,8 +20,10 @@ import threading
 
 #signal.setitimer(signal.ITIMER_PROF, 1, 1.0)
 #signal.signal(signal.SIGPROF,change_bg)
-LOGFILE = 'log'
+LOGFILE = os.environ["XDG_CONFIG_HOME"]+'/bg/log'
 logging.basicConfig(format='%(asctime)s %(message)s',filename=LOGFILE,level=logging.DEBUG)
+#logger = logging.getLogger()
+#logger.disabled = True
 
 def depth(L):
     if not L or not isinstance(L, list):
@@ -57,6 +59,7 @@ def setselec(i, n):
 
 
 def renew(i, delta=1):
+    logging.info(str(i)+" renewing "+str(selec)+" dim:"+str(dims[i]))
     if i == d-1:
         item = getSelec(array,selec)
         if item:
@@ -64,7 +67,8 @@ def renew(i, delta=1):
             os.system(command+'"'+item+'"'+" >>log")
             logging.info("command done")
 
-    if not cycle[i] and ( selec[i]+delta >= dims[i] or selec[i]+delta < 0):
+    # when at last/first element, if cycle is on, move to next/previous of dim i-1
+    if i != 0 and not cycle[i] and ( selec[i]+delta >= dims[i] or selec[i]+delta < 0):
         logging.debug("cycle renew")
         setselec(i-1,selec[i-1]+(delta//abs(delta)))
         setselec(i,selec[i]+delta-dims[i])
@@ -82,7 +86,7 @@ def renew(i, delta=1):
         
         if times[i+1] != 0 and events[i+1] in s.queue:
             s.cancel(events[i+1])
-        renew(i+1,1)
+        renew(i+1,0)
     if times[i] != 0:
         events[i] = s.enter(times[i],0,renew,argument=(i,))
 
@@ -141,6 +145,7 @@ def read_args(args,d):
     parser.add_argument("-c", "--cycle",default=json.dumps([False]*d),help="list of booleans coding wether a dimension is to be cycled through or should cause the next dimension to update when it reaches the end of its indexes")
     parser.add_argument("-p", "--port",default=5005,type=int,help="port of sel server")
     parser.add_argument("-a", "--address",default="127.0.0.1",help="address of the sel server")
+    parser.add_argument("-e", "--exec",default="echo ",help="command to be executed with selected item as argument")
 
     return parser.parse_args(sys.argv[1:])
 
@@ -160,7 +165,7 @@ randomize=json.loads(args.randomize)
 cycle=json.loads(args.cycle)
 s=0
 #command="feh --bg-fill --no-fehbg --no-xinerama "
-command="/home/martine/bin/chbg "
+command=args.exec
 events=[]
 
 print(d)

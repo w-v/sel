@@ -1,6 +1,7 @@
 #!/usr/bin/env python3
 
 import subprocess
+import argparse
 import sys
 import json
 from functools import reduce
@@ -18,9 +19,20 @@ def remove_meta(e):
         return e["name"]
 
 
-path=sys.argv[1]
-# add an option for depth
-out = subprocess.Popen(['tree', '-J', "--noreport","-L", "2","-f", path],stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
+def read_args(args):
+    parser=argparse.ArgumentParser(description='arg parsing')
+    parser.add_argument("path", help="path to the root of the tree")
+    parser.add_argument("-d", "--depth",help="max depth of json tree")
+    return parser.parse_args(sys.argv[1:])
+
+args = read_args(sys.argv[1:])
+path=args.path
+cmd=['tree', '-J', "--noreport","-f", path]
+if args.depth:
+    cmd.insert(1,str(args.depth))
+    cmd.insert(1,"-L")
+
+out = subprocess.Popen(cmd,stdout=subprocess.PIPE,stderr=subprocess.STDOUT)
 st,str=out.communicate()
 b = st.decode()
 o=json.loads(b)
